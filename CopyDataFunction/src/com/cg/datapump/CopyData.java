@@ -15,7 +15,7 @@ import com.thoughtworks.xstream.io.xml.StaxDriver;
 public class CopyData
 {
   private static final XStream xstream = new XStream(new StaxDriver());
-  private static DataPump dataPump = null;
+  private static DataPump dataPump = null;  
   private static java.sql.Connection sourceCon = null;
   private static java.sql.Connection destCon = null;
   private List<MappingInfo> srcColumLst = new ArrayList();
