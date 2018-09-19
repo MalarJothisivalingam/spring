@@ -6,19 +6,16 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
-
 public class CopyData
 {
   private static final XStream xstream = new XStream(new StaxDriver());
   private static DataPump dataPump = null;  
   private static java.sql.Connection sourceCon = null;
   private static java.sql.Connection destCon = null;
-  private List<MappingInfo> srcColumLst = new ArrayList();
+  private List<MappingInfo> srcColumLst = new ArrayList<MappingInfo>();
   private static String srcQuery = "";
   private static String destQuery = "";
   private int count = 0;
@@ -35,13 +32,11 @@ public class CopyData
     copyData.Connect();
     System.out.println("   Done.");
     
+    
     System.out.print("Generating Metadata....");
-    if (dataPump.getTable().getForceMatch().equals("true")) {
+    if (dataPump.getTables()[0].getForceMatch().equals("true")) {
       copyData.populateMetaData();
     }
-    //copyData.overrideColumnMatch(false);
-    
-    //copyData.isCombine();
     copyData.constuctQueries();
     System.out.println("   Done.");
     
@@ -55,7 +50,7 @@ public class CopyData
   {
     xstream.alias("DataPump", DataPump.class);
     xstream.alias("Connection", com.cg.datapump.Connection.class);
-    xstream.alias("Table", Table.class);
+    xstream.alias("table", Table.class);
     xstream.alias("Column", Column.class);
     try
     {
@@ -121,9 +116,9 @@ public class CopyData
   
   private void populateMetaData()
   {
-    fetchMetaData(sourceCon, dataPump.getTable().getSourceSchema(), dataPump.getTable().getSourceTable(), false);
+    fetchMetaData(sourceCon, dataPump.getTables()[0].getSourceSchema(), dataPump.getTables()[0].getSourceTable(), false);
     
-    fetchMetaData(destCon, dataPump.getTable().getDestSchema(), dataPump.getTable().getDestTable(), true);
+    fetchMetaData(destCon, dataPump.getTables()[0].getDestSchema(), dataPump.getTables()[0].getDestTable(), true);
   }
   
   private void fetchMetaData(java.sql.Connection con, String schema, String table, boolean flag)
@@ -136,8 +131,7 @@ public class CopyData
       {
         MappingInfo mapping = new MappingInfo();
         if (!flag) {
-          mapping.setSrcColumn(rs.getString(4));//set column name 
-      
+          mapping.setSrcColumn(rs.getString(4));//set column name       
         } else {
           mapping.setDestColumn(rs.getString(4));
         }
@@ -164,7 +158,7 @@ public class CopyData
   private void populateMappingInfo(MappingInfo mappingInfo)
   {
     String col = mappingInfo.getDestColumn();
-    List<MappingInfo> list = new ArrayList();
+    List<MappingInfo> list = new ArrayList<MappingInfo>();
     for (MappingInfo info : this.srcColumLst) {
       if (info.getSrcColumn().equals(col))
       {
@@ -173,132 +167,9 @@ public class CopyData
         break;
       }
     }
-    this.srcColumLst.addAll(list);
+   // this.srcColumLst.addAll(list);
   }
-  
-  
- /* private void overrideColumnMatch(boolean usecolumn)
-  {
-      List list = new ArrayList();
-      if(usecolumn && dataPump.getTable().getForceMatch().equals("true") && dataPump.getTable().getColumns().length > 0)
-      {
-    	  
-          for(Iterator iterator = srcColumLst.iterator(); iterator.hasNext();)
-          {
-        	  
-              MappingInfo info = (MappingInfo)iterator.next();
-              Column acolumn1[];
-              int l = (acolumn1 = dataPump.getTable().getColumns()).length;
-             // System.out.println("length of L : "+l);
-              for(int k = 0; k < l; k++)
-              {
-                  Column column = acolumn1[k];
-                  if(column.getSourceColumn() != null && !column.getSourceColumn().equals(""))
-                  {
-                      if(!info.getSrcColumn().equals(column.getSourceColumn()))
-                          continue;
-                      info.setDestColumn(column.getDestColumn());
-                      info.setMapped(true);
-                      info.setOverride(true);
-                      break;
-                  }
-                  if(column.getValue() == null || getInfo(column.getDestColumn(), list) != null)
-                      continue;
-                  MappingInfo info2 = new MappingInfo();
-                  info2.setDestColumn(column.getDestColumn());
-                  info2.setSrcValue(column.getValue());
-                  info2.setMapped(true);
-                  info2.setOverride(true);
-                  list.add(info2);
-                  break;
-              }
-
-          }
-
-          srcColumLst.addAll(list);
-          removeAllDuplicates();
-      } else if(usecolumn)
-      {
-          Column acolumn[];
-          int j = (acolumn = dataPump.getTable().getColumns()).length;
-          for(int i = 0; i < j; i++)
-          {
-              Column column = acolumn[i];
-              if(column.getSourceColumn() != null && !column.getSourceColumn().equals(""))
-              {
-                  MappingInfo info = new MappingInfo();
-                  info.setSrcColumn(column.getSourceColumn());
-                  info.setDestColumn(column.getDestColumn());
-                  info.setMapped(true);
-                  info.setOverride(true);
-                  srcColumLst.add(info);
-              } else
-              if(column.getValue() != null)
-              {
-                  MappingInfo info2 = new MappingInfo();
-                  info2.setDestColumn(column.getDestColumn());
-                  info2.setSrcValue(column.getValue());
-                  info2.setMapped(true);
-                  info2.setOverride(true);
-                  list.add(info2);
-              }
-          }
-
-          srcColumLst.addAll(list);
-      }
-  }
-  private void removeAllDuplicates()
-  {
-    List<MappingInfo> list = new ArrayList();
-    for (MappingInfo info : this.srcColumLst) {
-      if (info.isOverride()) {
-        for (MappingInfo info1 : this.srcColumLst) {
-          if (info.getSrcColumn() != null)
-          {
-            if ((info.getDestColumn().equals(info1.getDestColumn())) && (!info1.isOverride())) {
-              list.add(info1);
-            } else if ((info.getSrcColumn().equals(info1.getSrcColumn())) && (!info1.isOverride())) {
-              list.add(info1);
-            }
-          }
-          else if ((info.getDestColumn().equals(info1.getDestColumn())) && (!info1.isOverride())) {
-            list.add(info1);
-          }
-        }
-      }
-    }
-    this.srcColumLst.removeAll(list);
-  }
-  
-  private boolean isCombine()
-  {
-    boolean flag = false;
-    List<MappingInfo> tmpLst = new ArrayList();
-    if (dataPump.getTable().getColumns().length > 0) {
-      for (MappingInfo info1 : this.srcColumLst)
-      {
-        int j = 0;
-        if (info1.getDestColumn() != null) {
-          for (MappingInfo info2 : this.srcColumLst) {
-            if (info1.getDestColumn().equals(info2.getDestColumn()))
-            {
-              j++;
-              if (j > 1)
-              {
-                info2.setCombineInserts(true);
-                flag = true;
-              }
-            }
-          }
-        } else {
-          tmpLst.add(info1);
-        }
-      }
-    }
-    this.srcColumLst.removeAll(tmpLst);
-    return flag;
-  }*/
-  
+   
   private MappingInfo getInfo(String destColm, List<MappingInfo> lst)
   {
     for (MappingInfo info : lst) {
@@ -312,9 +183,9 @@ public class CopyData
   private void constuctQueries()
   {
     StringBuffer srcBuffer = new StringBuffer("Select ");
-    StringBuffer dstBuffer = new StringBuffer("Insert into " + dataPump.getTable().getDestSchema() + "." + dataPump.getTable().getDestTable() + " ( ");
+    StringBuffer dstBuffer = new StringBuffer("Insert into " + dataPump.getTables()[0].getDestSchema() + "." + dataPump.getTables()[0].getDestTable() + " ( ");
     StringBuffer tmpHolder = new StringBuffer();
-    List<MappingInfo> tmpLst = new ArrayList();
+    List<MappingInfo> tmpLst = new ArrayList<MappingInfo>();
     for (MappingInfo info : this.srcColumLst) {
       if (info.isMapped())
       {
@@ -345,11 +216,11 @@ public class CopyData
         tmpLst.add(info);
       }
     }
-    this.srcColumLst.remove(tmpLst);
+  this.srcColumLst.remove(tmpLst);
     
-    srcBuffer.append(" from ").append(dataPump.getTable().getSourceSchema()).append(".").append(dataPump.getTable().getSourceTable()).append(" ");
-    if (dataPump.getTable().getClause() != null) {
-      srcBuffer.append(dataPump.getTable().getClause());
+    srcBuffer.append(" from ").append(dataPump.getTables()[0].getSourceSchema()).append(".").append(dataPump.getTables()[0].getSourceTable()).append(" ");
+    if (dataPump.getTables()[0].getClause() != null) {
+      srcBuffer.append(dataPump.getTables()[0].getClause());
     }
     dstBuffer.append(" ) values ( ").append(tmpHolder).append(" )");
   
@@ -372,7 +243,7 @@ public class CopyData
       ResultSet srcRS = srcPstmt.executeQuery();
       while (srcRS.next())
       {
-        tmpLst = new ArrayList();
+        tmpLst = new ArrayList<MappingInfo>();
     
         for (MappingInfo info : this.srcColumLst) {
           if (info.getSrcColumn() != null)

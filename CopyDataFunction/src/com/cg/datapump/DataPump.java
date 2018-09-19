@@ -3,7 +3,7 @@ package com.cg.datapump;
 public class DataPump {
 	private Connection sourceConnection;
 	  private Connection destConnection;
-	  private Table table;
+	  private Table[] Tables;
 	  
 	  public Connection getSourceConnection()
 	  {
@@ -24,14 +24,14 @@ public class DataPump {
 	  {
 	    this.destConnection = destConnection;
 	  }
+
+	public Table[] getTables() {
+		return Tables;
+	}
+
+	public void setTables(Table[] tables) {
+		Tables = tables;
+	}
 	  
-	  public Table getTable()
-	  {
-	    return this.table;
-	  }
-	  
-	  public void setTable(Table table)
-	  {
-	    this.table = table;
-	  }
+	 
 }

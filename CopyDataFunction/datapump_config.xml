@@ -10,20 +10,23 @@
     <connectionURL>jdbc:h2:tcp://localhost/~/test</connectionURL>
     <userId>sa</userId>
     <password></password>  
-  </destConnection>
-  
-  <table>
+  </destConnection> 
+ <Tables>
+ <table>
     <sourceTable>Employee</sourceTable>
     <sourceSchema>source_schema</sourceSchema>
     <destTable>employee</destTable>
     <destSchema>target_schema</destSchema>
     <forceMatch>true</forceMatch>
-<!--     <clause>where id=1</clause> -->
-    <columns>          
-      <Column>        
-        <destColumn>added_by</destColumn>
-        <value>Malar</value>
-      </Column>      
-    </columns>
+    <clause></clause>
   </table>
+  <!-- <table>
+    <sourceTable>LOGIN</sourceTable>
+    <sourceSchema>source_schema</sourceSchema>
+    <destTable>LOGIN</destTable>
+    <destSchema>target_schema</destSchema>
+    <forceMatch>true</forceMatch>
+    <clause></clause>
+  </table> -->
+  </Tables>
  </DataPump>
